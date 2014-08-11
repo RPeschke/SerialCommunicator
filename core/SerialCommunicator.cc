@@ -123,7 +123,7 @@ int SerialCommunicator::getBaudRate(int baudRate) throw(std::invalid_argument) {
 		case 9600: return B9600;
 		case 19200: return B19200;
 		case 38400: return B38400;
-		default: throw std::runtime_error(ExceptionFactory::generateMessage("Bad baud rate: " + std::to_string(baudRate) + "!", "SerialCommunicator.cc", __LINE__));
+		default: throw std::invalid_argument(ExceptionFactory::generateMessage("Bad baud rate: " + std::to_string(baudRate) + "!", "SerialCommunicator.cc", __LINE__));
 	}
 }
 
@@ -133,7 +133,7 @@ int SerialCommunicator::characterSizeMask(int characterSize) throw(std::invalid_
 		case 6: return CS6;
 		case 7: return CS7;
 		case 8: return CS8;
-		default: throw std::runtime_error(ExceptionFactory::generateMessage("Bad character size: " + std::to_string(characterSize) + "!", "SerialCommunicator.cc", __LINE__));
+		default: throw std::invalid_argument(ExceptionFactory::generateMessage("Bad character size: " + std::to_string(characterSize) + "!", "SerialCommunicator.cc", __LINE__));
 	}
 }
 
