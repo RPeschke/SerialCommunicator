@@ -65,7 +65,7 @@ void SerialCommunicator::disconnect(void) throw(std::runtime_error) {
 	_connected = false;
 }
 
-void SerialCommunicator::send(const Query query) throw(std::runtime_error) {
+void SerialCommunicator::send(const Query &query) throw(std::runtime_error) {
 	if (_connected) {
 		std::string command = query.command();
 		command += 10;		//line feed
@@ -97,7 +97,7 @@ std::string SerialCommunicator::plainRead(void) throw(std::runtime_error) {
 	return output;
 }
 
-std::string SerialCommunicator::query(const Query query, CommandFactory &cf, const long sleep /*=0L*/) throw(std::runtime_error) {
+std::string SerialCommunicator::query(const Query &query, CommandFactory &cf, const long sleep /*=0L*/) throw(std::runtime_error) {
 	send(query);
 	std::this_thread::sleep_for(std::chrono::milliseconds(sleep));
 	std::string plain = plainRead();

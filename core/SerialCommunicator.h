@@ -15,9 +15,9 @@ public:
 	void connect(void) throw(std::runtime_error);
 	bool connected(void) const;
 	void disconnect(void) throw(std::runtime_error);
-	void send(const Query query) throw(std::runtime_error);
+	void send(const Query &) throw(std::runtime_error);
 	std::string plainRead(void) throw(std::runtime_error);
-	std::string query(const Query, CommandFactory &, const long sleep=0L) throw(std::runtime_error);
+	std::string query(const Query &, CommandFactory &, const long sleep=0L) throw(std::runtime_error);
 
 private:
 	std::string _port;
