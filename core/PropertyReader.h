@@ -10,7 +10,7 @@ class PropertyReader {
 public:
 	PropertyReader(std::ifstream &propertyFile) throw(std::invalid_argument);
 	bool contains(std::string key) const;
-	std::string get(std::string key, std::string defaultValue) const;
+	std::string get(std::string key, std::string defaultValue="") const;
 
 private:
 	std::map<std::string, std::string> _properties;

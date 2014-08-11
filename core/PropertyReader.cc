@@ -31,7 +31,7 @@ bool PropertyReader::contains(std::string key) const {
 	return _properties.count(key) == 1;
 }
 
-std::string PropertyReader::get(const std::string key, std::string defaultValue) const {
+std::string PropertyReader::get(const std::string key, std::string defaultValue /*=""*/) const {
 	if (PropertyReader::contains(key)) return _properties.find(key)->second;
 	return defaultValue;
 }

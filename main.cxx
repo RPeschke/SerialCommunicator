@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include <iostream>
+#include <string>
 
 #include "SecoConfig.h"
 
@@ -11,15 +12,17 @@
 #include "SerialCommunicator.h"
 int main(void) {
 	std::cout << "SeCo (version: " << seco_VERSION_MAJOR << "." << seco_VERSION_MINOR << ")" << std::endl;
-	
-	std::ifstream f("../ttiCPX400_commands.config", std::ifstream::in);
-	CommandFactory cf(f);
 
-	std::string port = "/dev/ttyACM0";
-	int baudRate = 9600;
-	int byteSize = 8;
-	int stopBits = 0;
-	int parity = 0;
+	std::ifstream config("../ttiCPX400.config", std::ifstream::in);
+	PropertyReader pr(config);
+	std::string port = pr.get("port");
+	int baudRate = std::stoi(pr.get("baudRate"));
+	int byteSize = std::stoi(pr.get("byteSize"));
+	int stopBits = std::stoi(pr.get("stopBits"));
+	int parity = std::stoi(pr.get("parity"));
+
+	std::ifstream commands("../ttiCPX400_commands.config", std::ifstream::in);
+	CommandFactory cf(commands);
 
 	SerialCommunicator sc(port, baudRate, byteSize, stopBits, parity);
 	sc.connect();
