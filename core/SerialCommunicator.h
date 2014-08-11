@@ -7,6 +7,13 @@
 #include "CommandFactory.h"
 #include "Query.h"
 
+#ifdef WIN32
+#include <windows.h>
+typedef HANDLE PORTHANDLE;
+#else
+typedef int PORTHANDLE;
+#endif
+
 
 class SerialCommunicator {
 public:
@@ -26,7 +33,7 @@ private:
 	bool _stopBits;
 	int _parity;
 	int _connected;
-	int _fd;
+	PORTHANDLE _fd;
 	size_t _sizeOfReadString;
 
 	int getBaudRate(int) throw(std::invalid_argument);
