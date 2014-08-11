@@ -49,7 +49,7 @@ std::array<std::string, 4> CommandFactory::split(const std::string &line) throw(
 
 Query CommandFactory::generateQuery(const std::string &commandID) const throw(std::invalid_argument) {
 	if (_commands.count(commandID) != 1) throw std::invalid_argument(ExceptionFactory::generateMessage("Command ID \'" + commandID + "\' not found!", "CommandFactory.cc", __LINE__));
-	return Query((_commands.find(commandID)->second)[0]);
+	return Query(commandID, (_commands.find(commandID)->second)[0]);
 }
 
 std::string CommandFactory::generateAnswer(const std::string &commandID, const std::string &answer) const throw(std::invalid_argument) {

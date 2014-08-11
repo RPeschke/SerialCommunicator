@@ -92,12 +92,11 @@ std::string SerialCommunicator::plainRead(void) throw(std::runtime_error) {
 	return output;
 }
 
-std::string SerialCommunicator::query(const Query query, const long sleep /*=0L*/) throw(std::runtime_error) {
+std::string SerialCommunicator::query(const Query query, CommandFactory &cf, const long sleep /*=0L*/) throw(std::runtime_error) {
 	send(query);
 	std::this_thread::sleep_for(std::chrono::milliseconds(sleep));
 	std::string plain = plainRead();
-
-	_cf.
-
-	return plain;
+	std::string answer = cf.generateAnswer(query.id(), plain);
+	
+	return answer;
 }
