@@ -4,8 +4,8 @@
 #include <stdexcept>
 #include <string>
 
-#include "CommandFactory.h"
-#include "Query.h"
+//#include "CommandFactory.h"
+//#include "Query.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -14,7 +14,7 @@ typedef HANDLE PORTHANDLE;
 typedef int PORTHANDLE;
 #endif
 
-
+class Query;
 class SerialCommunicator {
 public:
 	SerialCommunicator(std::string port, int baudRate, int characterSize, bool sendTwoStopBits, bool enableParity);

@@ -1,9 +1,7 @@
-#include <SerialCommunicator.h>
-
 #include <chrono>
 #include <cstring>
 #include <thread>
-
+#include <iostream>
 
 #ifdef WIN32
 #define INVALID_PORT INVALID_HANDLE_VALUE
@@ -15,10 +13,10 @@
 #include <termios.h>
 #include <unistd.h>
 #endif
+
 #include "ExceptionFactory.h"
-#include <iostream>
-
-
+#include "Query.h"
+#include "SerialCommunicator.h"
 
 SerialCommunicator::SerialCommunicator(std::string port, int baudRate, int characterSize, bool sendTwoStopBits, bool enableParity) :
 _port(port),
@@ -184,7 +182,7 @@ std::string SerialCommunicator::plainRead(void) throw(std::runtime_error) {
     delete[] buffer;
     throw std::runtime_error(ExceptionFactory::generateMessage("Reading port \'" + _port + "\' leads to no output!", "SerialCommunicator.cc", __LINE__));
   }
-  // end linux
+  // end Linux
   //////////////////////////////////////////////////////////////////////////
 #endif
 
