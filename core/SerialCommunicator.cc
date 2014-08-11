@@ -11,12 +11,12 @@
 #include "ExceptionFactory.h"
 
 
-SerialCommunicator::SerialCommunicator(std::string port, int baudRate, int byteSize, int stopBits, int parity) :
+SerialCommunicator::SerialCommunicator(std::string port, int baudRate, int characterSize, bool sendTwoStopBits, bool enableParity) :
 _port(port),
 _baudRate(baudRate),
-_byteSize(byteSize),
-_stopBits(stopBits),
-_parity(parity), 
+_characterSize(characterSize),
+_stopBits(sendTwoStopBits),
+_parity(enableParity), 
 _sizeOfReadString(100) {
 }
 
@@ -33,18 +33,23 @@ void SerialCommunicator::connect(void) throw(std::runtime_error) {
 	}
 
 	struct termios options; 
-	tcgetattr(_fd, &options);			//get the current settings of the serial port
-	cfsetispeed(&options, B9600);			//set read and write speed to 19200 BAUD
-	options.c_cflag &= ~PARENB;				//set no parity
-	options.c_cflag &= ~CSTOPB;				//set one stop bit
-	options.c_cflag &= ~CSIZE;				//clear current data size setting
-	options.c_cflag |= CS8;					//set 8 bit per work
-	options.c_cc[VMIN] = 2;					//minimum amount of characters to read
-	options.c_cc[VTIME] = 10;				//amount of time to wait for amount of data specified in VMIN in tenths of a second
-	options.c_cflag |= (CLOCAL | CREAD);	//don't allow changing of port control + enable the receiver
+	tcgetattr(_fd, &options);
+
+	try {
+		cfsetispeed(&options, getBaudRate(_baudRate));
+		options.c_cflag &= parityMask(_parity);
+		options.c_cflag &= stopBitsMask(_stopBits);
+		options.c_cflag &= ~CSIZE;						//clear current data size setting
+		options.c_cflag |= characterSizeMask(_characterSize);
+		options.c_cc[VMIN] = 2;							//minimum amount of characters to read
+		options.c_cc[VTIME] = 10;						//amount of time to wait for amount of data specified in VMIN in tenths of a second
+		options.c_cflag |= (CLOCAL | CREAD);			//don't allow changing of port control + enable the receiver
+	} catch(std::invalid_argument &e) {
+		throw std::runtime_error(ExceptionFactory::generateMessage("Error while connecting to port \'" + _port + "\' due to bad port settings:\n" + e.what(), "SerialCommunicator.cc", __LINE__));
+	}
 
 	if (tcsetattr(_fd, TCSANOW, &options) != 0) {
-		throw std::runtime_error(ExceptionFactory::generateMessage("Error while connecting to port " + _port + "!", "SerialCommunicator.cc", __LINE__));
+		throw std::runtime_error(ExceptionFactory::generateMessage("Error while connecting to port \'" + _port + "\'!", "SerialCommunicator.cc", __LINE__));
 	}
 
 	_connected = true;
@@ -99,4 +104,44 @@ std::string SerialCommunicator::query(const Query query, CommandFactory &cf, con
 	std::string answer = cf.generateAnswer(query.id(), plain);
 	
 	return answer;
+}
+
+int SerialCommunicator::getBaudRate(int baudRate) throw(std::invalid_argument) {
+	switch (baudRate) {
+		case 50: return B50;
+		case 75: return B75;
+		case 110: return B110;
+		case 134: return B134;
+		case 150: return B150;
+		case 200: return B200;
+		case 300: return B300;
+		case 600: return B600;
+		case 1200: return B1200;
+		case 1800: return B1800;
+		case 2400: return B2400;
+		case 4800: return B4800;
+		case 9600: return B9600;
+		case 19200: return B19200;
+		case 38400: return B38400;
+		default: throw std::runtime_error(ExceptionFactory::generateMessage("Bad baud rate: " + std::to_string(baudRate) + "!", "SerialCommunicator.cc", __LINE__));
+	}
+}
+
+int SerialCommunicator::characterSizeMask(int characterSize) throw(std::invalid_argument) {
+	switch (characterSize) {
+		case 5: return CS5;
+		case 6: return CS6;
+		case 7: return CS7;
+		case 8: return CS8;
+		default: throw std::runtime_error(ExceptionFactory::generateMessage("Bad character size: " + std::to_string(characterSize) + "!", "SerialCommunicator.cc", __LINE__));
+	}
+}
+
+int SerialCommunicator::stopBitsMask(bool stopBits) throw(std::invalid_argument) {
+	if (stopBits) return CSTOPB;
+	else return ~CSTOPB;
+}
+int SerialCommunicator::parityMask(bool parity) throw(std::invalid_argument) {
+	if (parity) return PARENB;
+	else return ~PARENB;
 }

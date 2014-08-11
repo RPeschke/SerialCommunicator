@@ -10,7 +10,7 @@
 
 class SerialCommunicator {
 public:
-	SerialCommunicator(std::string port, int baudRate, int byteSize, int stopBits, int parity);
+	SerialCommunicator(std::string port, int baudRate, int characterSize, bool sendTwoStopBits, bool enableParity);
 	~SerialCommunicator(void);
 	void connect(void) throw(std::runtime_error);
 	bool connected(void) const;
@@ -22,12 +22,17 @@ public:
 private:
 	std::string _port;
 	int _baudRate;
-	int _byteSize;
-	int _stopBits;
+	int _characterSize;
+	bool _stopBits;
 	int _parity;
 	int _connected;
 	int _fd;
 	size_t _sizeOfReadString;
+
+	int getBaudRate(int) throw(std::invalid_argument);
+	int characterSizeMask(int) throw(std::invalid_argument);
+	int stopBitsMask(bool) throw(std::invalid_argument);
+	int parityMask(bool) throw(std::invalid_argument);
 };
 
 #endif
