@@ -1,0 +1,2 @@
+#define seco_VERSION_MAJOR @seco_VERSION_MAJOR@
+#define seco_VERSION_MINOR @seco_VERSION_MINOR@
