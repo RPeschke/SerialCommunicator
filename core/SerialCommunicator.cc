@@ -4,16 +4,20 @@
 #include <cstring>
 #include <thread>
 
-#include <fcntl.h>
+
 #ifdef WIN32
 #define INVALID_PORT INVALID_HANDLE_VALUE
-
+#include <windows.h>
+#include <winbase.h>
 #else
 #define INVALID_PORT -1
+#include <fcntl.h>
 #include <termios.h>
 #include <unistd.h>
 #endif
 #include "ExceptionFactory.h"
+#include <iostream>
+
 
 
 SerialCommunicator::SerialCommunicator(std::string port, int baudRate, int characterSize, bool sendTwoStopBits, bool enableParity) :
@@ -26,11 +30,15 @@ _sizeOfReadString(100) {
 }
 
 SerialCommunicator::~SerialCommunicator(void) {
-	if (_connected) {
-		disconnect();
-	}
+  if (_connected) {
+    try{
+      disconnect();
+    }
+    catch (...){
+      std::cout << " Unable to disconnect the port " << std::endl;
+    }
+  }
 }
-
 void SerialCommunicator::connect(void) throw(std::runtime_error) {
 #ifdef WIN32
   _fd = CreateFileA(_port.c_str(),
@@ -49,7 +57,38 @@ void SerialCommunicator::connect(void) throw(std::runtime_error) {
   if (_fd == INVALID_PORT) {
 		throw std::runtime_error(ExceptionFactory::generateMessage("Could not open port \'" + _port + "\'!", "SerialCommunicator.cc", __LINE__));
 	}
+#ifdef WIN32
+  // Setting Parameters
+  DCB dcbSerialParams = { 0 };
+  dcbSerialParams.DCBlength=sizeof(dcbSerialParams);
+  if (!GetCommState(_fd, &dcbSerialParams)) {
+    throw std::runtime_error(ExceptionFactory::generateMessage("!GetCommState(hSerial, &dcbSerialParams) is true","SerialCommunicator.cc" , __LINE__));
+  }
+  dcbSerialParams.BaudRate=_baudRate;
+  dcbSerialParams.ByteSize=_byteSize;
+    dcbSerialParams.StopBits=_stopBits;
+    dcbSerialParams.Parity=_parity;
+    if (!SetCommState(_fd, &dcbSerialParams)){
+      //error setting serial port state
+      throw std::runtime_error(ExceptionFactory::generateMessage("!SetCommState(hSerial, &dcbSerialParams) is true", "SerialCommunicator.cc", __LINE__));
 
+    }
+  
+      // setting timeout condition
+      COMMTIMEOUTS timeouts = { 0 };
+      timeouts.ReadIntervalTimeout = 50;
+      timeouts.ReadTotalTimeoutConstant = 50;
+      timeouts.ReadTotalTimeoutMultiplier = 10;
+      timeouts.WriteTotalTimeoutConstant = 50;
+      timeouts.WriteTotalTimeoutMultiplier = 10;
+      if (!SetCommTimeouts(_fd, &timeouts)){
+        //error occurred. Inform user
+        throw std::runtime_error(ExceptionFactory::generateMessage("!SetCommTimeouts(hSerial, &timeouts) is true", "SerialCommunicator.cc", __LINE__));
+
+      }
+    
+
+#else 
 	struct termios options; 
 	tcgetattr(_fd, &options);
 
@@ -69,7 +108,7 @@ void SerialCommunicator::connect(void) throw(std::runtime_error) {
 	if (tcsetattr(_fd, TCSANOW, &options) != 0) {
 		throw std::runtime_error(ExceptionFactory::generateMessage("Error while connecting to port \'" + _port + "\'!", "SerialCommunicator.cc", __LINE__));
 	}
-
+#endif
 	_connected = true;
 }
 
@@ -78,18 +117,42 @@ bool SerialCommunicator::connected(void) const {
 }
 
 void SerialCommunicator::disconnect(void) throw(std::runtime_error) {
-	if (!_connected || close(_fd)==-1) throw std::runtime_error(ExceptionFactory::generateMessage("Error while disconnecting from port " + _port + "!", "SerialCommunicator.cc", __LINE__));
 
+#ifdef WIN32
+  if (CloseHandle(_fd) == 0){
+    throw std::runtime_error(ExceptionFactory::generateMessage("Error while disconnecting from port " + _port + "!", "SerialCommunicator.cc", __LINE__));
+  }
+#else
+	if (!_connected || close(_fd)==-1) throw std::runtime_error(ExceptionFactory::generateMessage("Error while disconnecting from port " + _port + "!", "SerialCommunicator.cc", __LINE__));
+#endif
 	_connected = false;
 }
 
-void SerialCommunicator::send(const Query query) throw(std::runtime_error) {
+void SerialCommunicator::send(const Query& query) throw(std::runtime_error) {
 	if (_connected) {
 		std::string command = query.command();
-		command += 10;		//line feed
-		if (write(_fd, command.c_str(), command.size()) < 1) {
-			throw std::runtime_error(ExceptionFactory::generateMessage("Couldn't send query \'" + query.command() + "\'!", "SerialCommunicator.cc", __LINE__));
-		}
+    command += 10;		//line feed
+
+#ifdef WIN32
+    //////////////////////////////////////////////////////////////////////////
+    // Windows Part
+    DWORD dwBytesRead = 0;
+    if (!WriteFile(_fd, command.c_str(), command.size(), &dwBytesRead, NULL)){
+      throw std::runtime_error(ExceptionFactory::generateMessage("Couldn't send query \'" + query.command() + "\'!", "SerialCommunicator.cc", __LINE__));
+    
+    }
+    // end Windows Part
+    //////////////////////////////////////////////////////////////////////////
+#else //Linux
+    //////////////////////////////////////////////////////////////////////////
+    // start Linux
+    if (write(_fd, command.c_str(), command.size()) < 1){
+      throw std::runtime_error(ExceptionFactory::generateMessage("Couldn't send query \'" + query.command() + "\'!", "SerialCommunicator.cc", __LINE__));
+    }
+    // end Linux
+    //////////////////////////////////////////////////////////////////////////
+#endif
+
 	} else {
 		throw std::runtime_error(ExceptionFactory::generateMessage("Couldn't send query because you are not connected!", "SerialCommunicator.cc", __LINE__));
 	}
@@ -97,17 +160,35 @@ void SerialCommunicator::send(const Query query) throw(std::runtime_error) {
 
 std::string SerialCommunicator::plainRead(void) throw(std::runtime_error) {
 	if (!_connected) {
-		throw std::runtime_error(ExceptionFactory::generateMessage("Couldn'nt read because there is no connection!", "SerialCommunicator.cc", __LINE__));
+		throw std::runtime_error(ExceptionFactory::generateMessage("Couldn't read because there is no connection!", "SerialCommunicator.cc", __LINE__));
 	}
 	
 	const int n = _sizeOfReadString; 
 	char *buffer = new char[n+1];
-	memset(buffer, 0, n+1);		//to see the end of the recieved string
+	memset(buffer, 0, n+1);		//to see the end of the received string
+#ifdef WIN32
+  //////////////////////////////////////////////////////////////////////////
+  // Windows Part
+  DWORD dwByteRead = 0;
+  if (!ReadFile(_fd, buffer, n, &dwByteRead, NULL)){
+    delete [] buffer;
+    throw std::runtime_error(ExceptionFactory::generateMessage("Reading port \'" + _port + "\' leads to no output!", "SerialCommunicator.cc", __LINE__));
+  }
+  // end Windows Part
+  //////////////////////////////////////////////////////////////////////////
+#else //Linux
+  //////////////////////////////////////////////////////////////////////////
+  // start Linux
+  int bytes = 0;
+  if (read(_fd, buffer, n) < 1) {
+    delete[] buffer;
+    throw std::runtime_error(ExceptionFactory::generateMessage("Reading port \'" + _port + "\' leads to no output!", "SerialCommunicator.cc", __LINE__));
+  }
+  // end linux
+  //////////////////////////////////////////////////////////////////////////
+#endif
 
-	if (read(_fd, buffer, n) < 1) {
-		delete[] buffer;
-		throw std::runtime_error(ExceptionFactory::generateMessage("Reading port \'" + _port + "\' leads to no output!", "SerialCommunicator.cc", __LINE__));
-	}
+
 
 	std::string output(buffer);
 	delete[] buffer;
