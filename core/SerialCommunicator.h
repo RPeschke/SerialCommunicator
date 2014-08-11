@@ -11,7 +11,7 @@
 class SerialCommunicator {
 public:
 	SerialCommunicator(std::string port, int baudRate, int characterSize, bool sendTwoStopBits, bool enableParity);
-	~SerialCommunicator(void);
+	~SerialCommunicator(void) throw(std::runtime_error);
 	void connect(void) throw(std::runtime_error);
 	bool connected(void) const;
 	void disconnect(void) throw(std::runtime_error);

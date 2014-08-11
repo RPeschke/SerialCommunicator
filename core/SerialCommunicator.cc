@@ -20,7 +20,7 @@ _parity(enableParity),
 _sizeOfReadString(100) {
 }
 
-SerialCommunicator::~SerialCommunicator(void) {
+SerialCommunicator::~SerialCommunicator(void) throw(std::runtime_error) {
 	if (_connected) {
 		disconnect();
 	}
