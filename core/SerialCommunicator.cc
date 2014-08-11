@@ -5,9 +5,14 @@
 #include <thread>
 
 #include <fcntl.h>
+#ifdef WIN32
+#define INVALID_PORT INVALID_HANDLE_VALUE
+
+#else
+#define INVALID_PORT -1
 #include <termios.h>
 #include <unistd.h>
-
+#endif
 #include "ExceptionFactory.h"
 
 
@@ -27,8 +32,21 @@ SerialCommunicator::~SerialCommunicator(void) {
 }
 
 void SerialCommunicator::connect(void) throw(std::runtime_error) {
-	_fd = open(_port.c_str(), (O_RDWR | O_NOCTTY) & ~O_NONBLOCK);
-	if (_fd < 0) {
+#ifdef WIN32
+  _fd = CreateFileA(_port.c_str(),
+    GENERIC_READ | GENERIC_WRITE,
+    0,
+    0,
+    OPEN_EXISTING,
+    FILE_ATTRIBUTE_NORMAL,
+    0);// opening the com port 
+#else
+   _fd = open(_port.c_str(), (O_RDWR | O_NOCTTY) & ~O_NONBLOCK);
+#endif
+	
+  
+  
+  if (_fd == INVALID_PORT) {
 		throw std::runtime_error(ExceptionFactory::generateMessage("Could not open port \'" + _port + "\'!", "SerialCommunicator.cc", __LINE__));
 	}
 
