@@ -16,8 +16,8 @@ CommandFactory::CommandFactory(std::ifstream &commandConfigFile) throw(std::inva
 	for (char c=commandConfigFile.get(); commandConfigFile.good(); c=commandConfigFile.get()) {
 		if (!qmark && c=='\n') {
 			std::array<std::string, 4> values = split(line + ';');
-			std::array<std::string, 3> x = {values[1], values[2], values[3]};
-			_commands.insert(std::pair<std::string, std::array<std::string, 3>>(values[0], x));
+			struct config x = {values[1], values[2], values[3]};
+			_commands.insert(std::pair<std::string, struct config>(values[0], x));
 			line = "";
 		} else {
 			if (c == '\"') qmark = !qmark;
@@ -49,15 +49,15 @@ std::array<std::string, 4> CommandFactory::split(const std::string &line) throw(
 
 Query CommandFactory::generateQuery(const std::string &commandID) const throw(std::invalid_argument) {
 	if (_commands.count(commandID) != 1) throw std::invalid_argument(ExceptionFactory::generateMessage("Command ID \'" + commandID + "\' not found!", "CommandFactory.cc", __LINE__));
-	return Query(commandID, (_commands.find(commandID)->second)[0]);
+	return Query(commandID, (_commands.find(commandID)->second).command);
 }
 
 std::string CommandFactory::generateAnswer(const std::string &commandID, const std::string &answer) const throw(std::invalid_argument) {
 	std::regex rgx;
 	try {
-		rgx = std::regex((_commands.find(commandID)->second)[1]);
+		rgx = std::regex((_commands.find(commandID)->second).regexp);
 	} catch(...) {
-		throw std::invalid_argument(ExceptionFactory::generateMessage("Regular Expression \'" + (_commands.find(commandID)->second)[1] + "\' does not compile!", "CommandFactory.cc", __LINE__));
+		throw std::invalid_argument(ExceptionFactory::generateMessage("Regular Expression \'" + (_commands.find(commandID)->second).regexp + "\' does not compile!", "CommandFactory.cc", __LINE__));
 	}
 
 	std::string input = answer;
@@ -66,7 +66,7 @@ std::string CommandFactory::generateAnswer(const std::string &commandID, const s
 		matches.push_back(match[0]);
 	}
 
-	std::string pattern = (_commands.find(commandID)->second)[2];
+	std::string pattern = (_commands.find(commandID)->second).outputPattern;
 	pattern += ";";
 	bool qmark = false;
 	int x = 0;

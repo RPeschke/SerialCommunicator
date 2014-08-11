@@ -17,8 +17,14 @@ public:
 	std::string generateAnswer(const std::string &commandID, const std::string &answer) const throw(std::invalid_argument);
 
 private:
+	struct config {
+		std::string command;
+		std::string regexp;
+		std::string outputPattern;
+	};
+
 	std::array<std::string, 4> split(const std::string &line) throw(std::invalid_argument);
-	std::map<std::string, std::array<std::string, 3>> _commands;
+	std::map<std::string, struct config> _commands;
 };
 
 #endif
