@@ -1,6 +1,6 @@
 #include "ExceptionFactory.h"
 
 
-const std::string ExceptionFactory::generateMessage(const std::string msg, const std::string filename, const int line) {
+std::string ExceptionFactory::generateMessage(const std::string msg, const std::string filename, const int line) {
 	return "[" + filename + " - line: " + std::to_string(line) + "] " + msg;
 }

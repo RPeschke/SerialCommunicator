@@ -6,7 +6,7 @@
 
 class ExceptionFactory {
 public:
-	static const std::string generateMessage(const std::string msg, const std::string filename, const int line);
+	static std::string generateMessage(const std::string msg, const std::string filename, const int line);
 };
 
 #endif
