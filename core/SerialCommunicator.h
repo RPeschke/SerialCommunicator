@@ -17,7 +17,8 @@ public:
 	void disconnect(void) throw(std::runtime_error);
 	void send(const Query &) throw(std::runtime_error);
 	std::string plainRead(void) throw(std::runtime_error);
-	std::string query(const Query &, CommandFactory &, const long sleep=0L) throw(std::runtime_error);
+	std::string query(const Query &, CommandFactory &) throw(std::runtime_error);
+	void defaultSleep(const long milliseconds);
 
 private:
 	std::string _port;
@@ -28,6 +29,7 @@ private:
 	int _connected;
 	int _fd;
 	size_t _sizeOfReadString;
+	long _sleep;
 
 	int getBaudRate(int) throw(std::invalid_argument);
 	int characterSizeMask(int) throw(std::invalid_argument);
