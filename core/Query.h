@@ -5,7 +5,7 @@
 
 class Query {
 public:
-	Query(std::string id, std::string queryString);
+	Query(std::string id, const std::string &queryString);
 	std::string id(void) const;
 	std::string command(void) const;
 
