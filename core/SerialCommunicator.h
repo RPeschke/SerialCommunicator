@@ -4,20 +4,18 @@
 #include <stdexcept>
 #include <string>
 
-#include "CommandFactory.h"
-#include "Query.h"
-
+#include "RichQuery.h"
 
 class SerialCommunicator {
 public:
-	SerialCommunicator(std::string port, int baudRate, int characterSize, bool sendTwoStopBits, bool enableParity);
+	SerialCommunicator(std::string port, int baudRate, int characterSize, bool sendTwoStopBits, bool enableParity, char commandTermination);
 	~SerialCommunicator(void) throw(std::runtime_error);
 	void connect(void) throw(std::runtime_error);
 	bool connected(void) const;
 	void disconnect(void) throw(std::runtime_error);
 	void send(const Query &) throw(std::runtime_error);
 	std::string plainRead(void) throw(std::runtime_error);
-	std::string query(const Query &, CommandFactory &) throw(std::runtime_error);
+	std::string query(const RichQuery &) throw(std::runtime_error);
 	void defaultSleep(const long milliseconds);
 
 private:
@@ -30,6 +28,7 @@ private:
 	int _fd;
 	size_t _sizeOfReadString;
 	long _sleep;
+	char _commandTermination;
 
 	int getBaudRate(int) throw(std::invalid_argument);
 	int characterSizeMask(int) throw(std::invalid_argument);

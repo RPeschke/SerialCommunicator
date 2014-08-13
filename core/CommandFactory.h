@@ -1,30 +1,28 @@
 #ifndef __COMMAND_FACTORY_H__
 #define __COMMAND_FACTORY_H__
 
-#include <array>
-#include <fstream>
-#include <map>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "Query.h"
+#include "RichQuery.h"
 
 
 class CommandFactory {
 public:
-	CommandFactory(std::ifstream &commandConfigFile) throw(std::invalid_argument);
-	Query generateQuery(const std::string &commandID) const throw(std::invalid_argument);
-	std::string generateAnswer(const std::string &commandID, const std::string &answer) const throw(std::invalid_argument);
+	static const char TARGET = '$';
+
+	static Query generateQuery(const std::string &command);
+	static Query generateQuery(const std::string &command, const std::string &arg, const char target=TARGET);
+	static Query generateQuery(const std::string &command, const std::vector<std::string> &args, const char target=TARGET);
+	static RichQuery generateQuery(const std::string &command, const std::string &regexp, const std::string &pattern);
+	static RichQuery generateQuery(const std::string &command, const std::string &regexp, const std::string &pattern, const std::string &arg, const char target=TARGET);
+	static RichQuery generateQuery(const std::string &command, const std::string &regexp, const std::string &pattern, const std::vector<std::string> &args, const char target=TARGET);
+	static std::string generateAnswer(const std::string &answer, const std::string &regexp, const std::string &pattern, const char target=TARGET) throw(std::invalid_argument);
 
 private:
-	struct config {
-		std::string command;
-		std::string regexp;
-		std::string outputPattern;
-	};
-
-	std::array<std::string, 4> split(const std::string &line) throw(std::invalid_argument);
-	std::map<std::string, struct config> _commands;
+	static std::string replace(std::string pattern, const char target, const std::vector<std::string> &args);
 };
 
 #endif

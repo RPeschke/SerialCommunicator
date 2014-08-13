@@ -8,17 +8,20 @@
 #include <termios.h>
 #include <unistd.h>
 
+#include "CommandFactory.h"
 #include "ExceptionFactory.h"
 
 
-SerialCommunicator::SerialCommunicator(std::string port, int baudRate, int characterSize, bool sendTwoStopBits, bool enableParity) :
+SerialCommunicator::SerialCommunicator(std::string port, int baudRate, int characterSize, bool sendTwoStopBits, bool enableParity, char commandTermination) :
 _port(port),
 _baudRate(baudRate),
 _characterSize(characterSize),
 _stopBits(sendTwoStopBits),
 _parity(enableParity), 
 _sizeOfReadString(100),
-_sleep(0) {
+_sleep(0),
+_connected(false),
+_commandTermination(commandTermination) {
 }
 
 SerialCommunicator::~SerialCommunicator(void) throw(std::runtime_error) {
@@ -69,7 +72,7 @@ void SerialCommunicator::disconnect(void) throw(std::runtime_error) {
 void SerialCommunicator::send(const Query &query) throw(std::runtime_error) {
 	if (_connected) {
 		std::string command = query.command();
-		command += 10;		//line feed
+		command += _commandTermination;
 		if (write(_fd, command.c_str(), command.size()) < 1) {
 			throw std::runtime_error(ExceptionFactory::generateMessage("Couldn't send query \'" + query.command() + "\'!", "SerialCommunicator.cc", __LINE__));
 		}
@@ -98,11 +101,11 @@ std::string SerialCommunicator::plainRead(void) throw(std::runtime_error) {
 	return output;
 }
 
-std::string SerialCommunicator::query(const Query &query, CommandFactory &cf) throw(std::runtime_error) {
+std::string SerialCommunicator::query(const RichQuery &query) throw(std::runtime_error) {
 	send(query);
 	std::this_thread::sleep_for(std::chrono::milliseconds(_sleep));
 	std::string plain = plainRead();
-	std::string answer = cf.generateAnswer(query.id(), plain);
+	std::string answer = CommandFactory::generateAnswer(plain, query.regexp(), query.pattern());
 	
 	return answer;
 }
