@@ -4,9 +4,7 @@
 #include <stdexcept>
 #include <string>
 
-//#include "CommandFactory.h"
-//#include "Query.h"
-
+#include "RichQuery.h"
 #ifdef WIN32
 #include <windows.h>
 typedef HANDLE PORTHANDLE;
@@ -17,14 +15,15 @@ typedef int PORTHANDLE;
 class Query;
 class SerialCommunicator {
 public:
-	SerialCommunicator(std::string port, int baudRate, int characterSize, bool sendTwoStopBits, bool enableParity);
-	~SerialCommunicator(void);
+	SerialCommunicator(std::string port, int baudRate, int characterSize, bool sendTwoStopBits, bool enableParity, char commandTermination);
+	~SerialCommunicator(void) throw(std::runtime_error);
 	void connect(void) throw(std::runtime_error);
 	bool connected(void) const;
 	void disconnect(void) throw(std::runtime_error);
-	void send(const Query& query) throw(std::runtime_error);
+	void send(const Query &) throw(std::runtime_error);
 	std::string plainRead(void) throw(std::runtime_error);
-	std::string query(const Query, CommandFactory &, const long sleep=0L) throw(std::runtime_error);
+	std::string query(const RichQuery &) throw(std::runtime_error);
+	void defaultSleep(const long milliseconds);
 
 private:
 	std::string _port;
@@ -35,6 +34,8 @@ private:
 	int _connected;
 	PORTHANDLE _fd;
 	size_t _sizeOfReadString;
+	long _sleep;
+	char _commandTermination;
 
 	int getBaudRate(int) throw(std::invalid_argument);
 	int characterSizeMask(int) throw(std::invalid_argument);

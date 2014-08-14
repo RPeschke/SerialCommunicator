@@ -5,13 +5,11 @@
 
 class Query {
 public:
-	Query(std::string id, std::string queryString);
-	std::string id(void) const;
+	Query(const std::string command);
 	std::string command(void) const;
 
 private:
-	std::string _id;
-	std::string _queryString;
+	std::string _command;
 };
 
 #endif

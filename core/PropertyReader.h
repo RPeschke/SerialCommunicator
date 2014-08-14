@@ -4,16 +4,27 @@
 #include <exception>
 #include <fstream>
 #include <map>
+#include <vector>
+
+#include "Property.h"
 
 
 class PropertyReader {
 public:
-	PropertyReader(std::ifstream &propertyFile) throw(std::invalid_argument);
-	bool contains(std::string key) const;
-	std::string get(std::string key, std::string defaultValue="") const;
+	PropertyReader(std::ifstream &propertyFile, const std::string &defaultTitle) throw(std::invalid_argument);
+	void setTitle(const std::string name);
+	std::string getTitle(void) const;
+	bool contains(const std::string &key) const;
+	std::string get(const std::string &key, const std::string defaultValue="") const;
 
 private:
-	std::map<std::string, std::string> _properties;
+	std::string _title;
+	std::map<std::string, Property> _properties;
+
+	std::vector<std::string> seperateLines(std::ifstream &propertyFile);
+	std::string trim(const std::string &) const;
+	std::pair<std::string, std::string> splitByFirstOccurrence(const std::string &, const char) const;
+	std::string toLowerCase(const std::string &) const;
 };
 
 #endif

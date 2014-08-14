@@ -14,20 +14,24 @@
 #include <unistd.h>
 #endif
 
+#include "CommandFactory.h"
 #include "ExceptionFactory.h"
 #include "Query.h"
 #include "SerialCommunicator.h"
 
-SerialCommunicator::SerialCommunicator(std::string port, int baudRate, int characterSize, bool sendTwoStopBits, bool enableParity) :
+SerialCommunicator::SerialCommunicator(std::string port, int baudRate, int characterSize, bool sendTwoStopBits, bool enableParity, char commandTermination) :
 _port(port),
 _baudRate(baudRate),
 _characterSize(characterSize),
 _stopBits(sendTwoStopBits),
 _parity(enableParity), 
-_sizeOfReadString(100) {
+_sizeOfReadString(100),
+_sleep(0),
+_connected(false),
+_commandTermination(commandTermination) {
 }
 
-SerialCommunicator::~SerialCommunicator(void) {
+SerialCommunicator::~SerialCommunicator(void) throw(std::runtime_error) {
   if (_connected) {
     try{
       disconnect();
@@ -126,10 +130,10 @@ void SerialCommunicator::disconnect(void) throw(std::runtime_error) {
 	_connected = false;
 }
 
-void SerialCommunicator::send(const Query& query) throw(std::runtime_error) {
+void SerialCommunicator::send(const Query &query) throw(std::runtime_error) {
 	if (_connected) {
 		std::string command = query.command();
-    command += 10;		//line feed
+		command += _commandTermination;
 
 #ifdef WIN32
     //////////////////////////////////////////////////////////////////////////
@@ -194,13 +198,17 @@ std::string SerialCommunicator::plainRead(void) throw(std::runtime_error) {
 	return output;
 }
 
-std::string SerialCommunicator::query(const Query query, CommandFactory &cf, const long sleep /*=0L*/) throw(std::runtime_error) {
+std::string SerialCommunicator::query(const RichQuery &query) throw(std::runtime_error) {
 	send(query);
-	std::this_thread::sleep_for(std::chrono::milliseconds(sleep));
+	std::this_thread::sleep_for(std::chrono::milliseconds(_sleep));
 	std::string plain = plainRead();
-	std::string answer = cf.generateAnswer(query.id(), plain);
+	std::string answer = CommandFactory::generateAnswer(plain, query.regexp(), query.pattern());
 	
 	return answer;
+}
+
+void SerialCommunicator::defaultSleep(const long milliseconds) {
+	_sleep = milliseconds;
 }
 
 int SerialCommunicator::getBaudRate(int baudRate) throw(std::invalid_argument) {
@@ -220,7 +228,7 @@ int SerialCommunicator::getBaudRate(int baudRate) throw(std::invalid_argument) {
 		case 9600: return B9600;
 		case 19200: return B19200;
 		case 38400: return B38400;
-		default: throw std::runtime_error(ExceptionFactory::generateMessage("Bad baud rate: " + std::to_string(baudRate) + "!", "SerialCommunicator.cc", __LINE__));
+		default: throw std::invalid_argument(ExceptionFactory::generateMessage("Bad baud rate: " + std::to_string(baudRate) + "!", "SerialCommunicator.cc", __LINE__));
 	}
 }
 
@@ -230,7 +238,7 @@ int SerialCommunicator::characterSizeMask(int characterSize) throw(std::invalid_
 		case 6: return CS6;
 		case 7: return CS7;
 		case 8: return CS8;
-		default: throw std::runtime_error(ExceptionFactory::generateMessage("Bad character size: " + std::to_string(characterSize) + "!", "SerialCommunicator.cc", __LINE__));
+		default: throw std::invalid_argument(ExceptionFactory::generateMessage("Bad character size: " + std::to_string(characterSize) + "!", "SerialCommunicator.cc", __LINE__));
 	}
 }
 
