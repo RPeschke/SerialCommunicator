@@ -67,7 +67,7 @@ void SerialCommunicator::connect(void) throw(std::runtime_error) {
     throw std::runtime_error(ExceptionFactory::generateMessage("!GetCommState(hSerial, &dcbSerialParams) is true","SerialCommunicator.cc" , __LINE__));
   }
   dcbSerialParams.BaudRate=_baudRate;
-  dcbSerialParams.ByteSize=_byteSize;
+  dcbSerialParams.ByteSize=_characterSize;
     dcbSerialParams.StopBits=_stopBits;
     dcbSerialParams.Parity=_parity;
     if (!SetCommState(_fd, &dcbSerialParams)){
@@ -212,7 +212,11 @@ void SerialCommunicator::defaultSleep(const long milliseconds) {
 }
 
 int SerialCommunicator::getBaudRate(int baudRate) throw(std::invalid_argument) {
-	switch (baudRate) {
+#ifdef WIN32
+  return baudRate;
+#else
+
+  switch (baudRate) {
 		case 50: return B50;
 		case 75: return B75;
 		case 110: return B110;
@@ -230,23 +234,42 @@ int SerialCommunicator::getBaudRate(int baudRate) throw(std::invalid_argument) {
 		case 38400: return B38400;
 		default: throw std::invalid_argument(ExceptionFactory::generateMessage("Bad baud rate: " + std::to_string(baudRate) + "!", "SerialCommunicator.cc", __LINE__));
 	}
+#endif
 }
 
 int SerialCommunicator::characterSizeMask(int characterSize) throw(std::invalid_argument) {
-	switch (characterSize) {
+#ifdef WIN32
+  return 1;
+#else
+
+  switch (characterSize) {
 		case 5: return CS5;
 		case 6: return CS6;
 		case 7: return CS7;
 		case 8: return CS8;
 		default: throw std::invalid_argument(ExceptionFactory::generateMessage("Bad character size: " + std::to_string(characterSize) + "!", "SerialCommunicator.cc", __LINE__));
 	}
+#endif
 }
 
 int SerialCommunicator::stopBitsMask(bool stopBits) throw(std::invalid_argument) {
-	if (stopBits) return CSTOPB;
+#ifdef WIN32
+  return 1;
+#else
+
+
+
+  if (stopBits) return CSTOPB;
 	else return ~CSTOPB;
+#endif 
 }
 int SerialCommunicator::parityMask(bool parity) throw(std::invalid_argument) {
+#ifdef WIN32
+  return 1;
+#else
+
 	if (parity) return PARENB;
 	else return ~PARENB;
+#endif
+
 }
